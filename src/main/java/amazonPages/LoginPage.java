@@ -18,6 +18,8 @@ public class LoginPage {
 	private WebElement password;
 	@FindBy(id = "signInSubmit")
 	private WebElement loginbtn;
+	@FindBy(xpath = "(//span[@class='nav-line-1'])[2]")
+	private WebElement actual;
 
 	public LoginPage(WebDriver driver) {
 
@@ -44,6 +46,11 @@ public class LoginPage {
 
 	public void clickLogin() {
 		loginbtn.click();
+	}
+
+	public String actual() {
+
+		return actual.getText();
 	}
 
 }

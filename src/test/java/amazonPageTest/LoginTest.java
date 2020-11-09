@@ -2,10 +2,9 @@ package amazonPageTest;
 
 import java.io.IOException;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import amazonPages.LoginPage;
 import resources.Base;
@@ -13,9 +12,10 @@ import resources.ReadData;
 
 public class LoginTest extends Base {
 
-	public WebDriver driver;
+	String inputFilename = "./" + "\\src\\main\\java\\resources\\Data.xlsx";
+	String sheetname = "login";
 
-	@BeforeMethod
+	@BeforeClass
 	public void initialize() throws IOException {
 
 		driver = initializeDriver();
@@ -23,38 +23,48 @@ public class LoginTest extends Base {
 
 	}
 
-	@AfterMethod
-	public void logout() {
-		driver.close();
-	}
+	@Test(dataProvider = "userdata")
+	public void toLogin(String username, String password) throws InterruptedException {
 
-	@Test(priority = 1)
-	public void invalidLoginTest() throws Exception {
-		String email = ReadData.getCellData(0, 0);
-		String pass = ReadData.getCellData(0, 1);
 		LoginPage login = new LoginPage(driver);
 		login.clickSignIn();
-		login.enterUserName(email);
+		login.enterUserName(username);
 		login.clickContinue();
-		login.enterPassword(pass);
+		login.enterPassword(password);
 		login.clickLogin();
-		String actual = driver.findElement(By.xpath("//span[text()[normalize-space()='Your password is incorrect']]"))
-				.getText();
-		Assert.assertEquals(actual, "Your password is incorrect");
+		if (driver.findElement(By.cssSelector("div#auth-error-message-box>div>i")).isDisplayed() == true) {
+			driver.findElement(By.xpath("//i[@class='a-icon a-icon-logo']")).click();
+		} else {
+			driver.findElement(By.xpath("//a[@id='nav-hamburger-menu']")).click();
+			driver.findElement(By.linkText("Sign Out")).click();
+			driver.findElement(By.xpath("//i[@class='a-icon a-icon-logo']")).click();
+		}
 
 	}
 
-	@Test(priority = 2)
-	public void validLoginTest() throws Exception {
-		String email = ReadData.getCellData(1, 0);
-		String pass = ReadData.getCellData(1, 1);
-		LoginPage login = new LoginPage(driver);
-		login.clickSignIn();
-		login.enterUserName(email);
-		login.clickContinue();
-		login.enterPassword(pass);
-		login.clickLogin();
-		String actual = driver.findElement(By.xpath("(//span[@class='nav-line-1'])[2]")).getText();
-		Assert.assertEquals(actual, "Hello, USER");
+	@AfterClass
+	public void tearDown() {
+		if (driver != null) {
+			driver.close();
+			driver.quit();
+		}
+	}
+
+	@DataProvider(name = "userdata")
+	public String[][] getData() throws IOException {
+		int rowcount = ReadData.getRowCount(inputFilename, sheetname);
+		int cellcount = ReadData.getCellData(inputFilename, sheetname, 0);
+		String loginData[][] = new String[rowcount][cellcount];
+
+		for (int row = 1; row <= rowcount; row++) {
+
+			for (int cell = 0; cell < cellcount; cell++) {
+
+				loginData[row - 1][cell] = ReadData.getCellData(inputFilename, sheetname, row, cell);
+
+			}
+		}
+		return loginData;
+
 	}
 }
